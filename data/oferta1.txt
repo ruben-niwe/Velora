@@ -1,0 +1,4 @@
+Requisitos de la oferta:
+- Experiencia mínima de 3 años en Python
+- Formación mínima requerida: Ingeniería/Grado en Informática o Master en Ingeniería
+- Valorable conocimietos en FastAPI y LangChain

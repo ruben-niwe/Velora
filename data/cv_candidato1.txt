@@ -1,0 +1,9 @@
+Experiencia:
+Desarrollador de IA Generativa - EMPRESA A (Abril 2023 - Actualidad)
+Encargado de desarrollar sistemas de IA generativa en Python, diseñando prompts eficientes y sistemas escalables
+
+Data Science / LLM - EMPRESA B (Enero 2022 - Abril 2023)
+Analista de datos para el entrenamiento de modelos LLM. Entre mis funciones reentrenamiento y validación de prompt diseñados para validar su correcto funcionamiento
+
+Formación:
+Ingeniería Informática (2017 - 2021)

@@ -1,0 +1,5 @@
+Requisitos de la oferta:
+- Experiencia mínima de 2 años en desarrollo web con Python o Node.js
+- Experiencia con APIs y despliegue en la nube
+- Formación mínima requerida: Ingeniería Informática
+- Valorable conocimientos en Machine Learning

@@ -1,0 +1,9 @@
+Experiencia:
+Desarrollador Fullstack - EMPRESA P (Abril 2022 - Actualidad)
+Trabajo con JavaScript, Node.js y Python en proyectos web. Participación en arquitectura de APIs y despliegue en la nube.
+
+Intern de Data Science - EMPRESA Q (Enero 2021 - Marzo 2022)
+Soporte en proyectos de ML, limpieza de datos y generación de visualizaciones. Uso de Python y bibliotecas de ciencia de datos.
+
+Formación:
+Ingeniería en Informática (2017 - 2021)

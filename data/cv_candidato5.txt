@@ -1,0 +1,9 @@
+Experiencia:
+Especialista en NLP - EMPRESA S (Marzo 2021 - Actualidad)
+Desarrollo de sistemas de procesamiento de lenguaje natural usando Python, Transformers y OpenAI APIs.
+
+Data Analyst - EMPRESA T (Junio 2019 - Febrero 2021)
+Extracción, limpieza y análisis de datos con Python y SQL para informes y dashboards.
+
+Formación:
+Grado en Ingeniería Informática (2014 - 2018)

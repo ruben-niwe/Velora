@@ -1,0 +1,5 @@
+Requisitos de la oferta:
+- Experiencia mínima de 3 años en Python
+- Experiencia en análisis de datos y Machine Learning
+- Formación mínima requerida: Grado o Máster en Ingeniería Informática
+- Valorable conocimientos en SQL y TensorFlow

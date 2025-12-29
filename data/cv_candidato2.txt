@@ -1,0 +1,9 @@
+Experiencia:
+Ingeniero de Machine Learning - EMPRESA X (Marzo 2021 - Actualidad)
+Desarrollo de modelos predictivos y sistemas de recomendación en Python y PyTorch, incluyendo entrenamiento y despliegue en producción.
+
+Desarrollador Backend - EMPRESA Y (Junio 2019 - Febrero 2021)
+Desarrollo de APIs REST con Flask y FastAPI, integración con bases de datos y servicios externos.
+
+Formación:
+Grado en Ingeniería Informática (2015 - 2019)

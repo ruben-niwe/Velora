@@ -1,0 +1,5 @@
+Requisitos de la oferta:
+- Experiencia mínima de 2 años en Python
+- Experiencia con frameworks web en Python (Flask, FastAPI)
+- Formación mínima requerida: Ingeniería en Informática o similar
+- Valorable conocimientos en ML y Deep Learning

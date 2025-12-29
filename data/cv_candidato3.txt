@@ -1,0 +1,9 @@
+Experiencia:
+Data Scientist - EMPRESA M (Enero 2020 - Actualidad)
+Análisis de datos y desarrollo de modelos de Machine Learning. Uso de Python, pandas, scikit-learn y TensorFlow.
+
+Ingeniero de Software Junior - EMPRESA N (Julio 2018 - Diciembre 2019)
+Desarrollo de herramientas internas en Python y SQL, soporte a proyectos de análisis de datos.
+
+Formación:
+Máster en Ingeniería Informática (2016 - 2018)

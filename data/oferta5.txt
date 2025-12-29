@@ -1,0 +1,5 @@
+Requisitos de la oferta:
+- Experiencia mínima de 3 años en Python
+- Experiencia en NLP o procesamiento de lenguaje natural
+- Formación mínima requerida: Grado en Ingeniería Informática o similar
+- Valorable conocimientos en Transformers o APIs de IA
