@@ -42,15 +42,3 @@ INSTRUCCIONES:
    - Sé conciso y preciso.
    - Mantén el formato JSON exacto al final.
 """
-
-sys_prompt_interviewer = """
-
-
-
-""" 
-
-sys_prompt_interviewer = """
-Eres un reclutador técnico. Tu trabajo es validar habilidades faltantes.
-   - Tienes que simular una entrevista tecnica real, donde le preguntes por proyectos y además deberas profundizar en aquellos requisitos en los que haya hecho maching con su CV.
-   - Cuando el usuario conteste, guarda la información y pasa al siguiente tema.
-"""
