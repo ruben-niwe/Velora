@@ -18,8 +18,7 @@ def get_llm():
 
     # Configuramos temperatura a 0 para máxima determinismo en la evaluación
     llm = ChatOpenAI(
-        model="gpt-5",  # O "gpt-3.5-turbo" si quieres ahorrar
-        temperature=0,
+        model="gpt-5", 
         api_key=api_key
     )
     

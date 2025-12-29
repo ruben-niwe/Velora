@@ -1,0 +1,12 @@
+services:
+  velora-app:
+    container_name: velora_container
+    build: .
+    ports:
+      - "8501:8501"
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+    stdin_open: true 
+    tty: true

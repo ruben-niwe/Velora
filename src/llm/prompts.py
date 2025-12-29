@@ -43,6 +43,11 @@ INSTRUCCIONES:
    - Mantén el formato JSON exacto al final.
 """
 
+sys_prompt_interviewer = """
+
+
+
+""" 
 
 sys_prompt_interviewer = """
 Eres un reclutador técnico. Tu trabajo es validar habilidades faltantes.

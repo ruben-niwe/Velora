@@ -1,46 +1,65 @@
+import uuid
 from src.utils.file_loader import load_cv, load_offer
 from src.core.evaluator import CVAnalyzer
-# Asegúrate de que el archivo anterior se llame 'interviewer.py' dentro de src/core/
 from src.core.interviewer import Interviewer 
 
 def main():
     # 1. Cargar Archivos
     try:
-        text_offer = load_offer(filename="oferta1.txt")
+        text_offer = load_offer(filename="oferta1.txt") 
         text_cv = load_cv(filename="cv_candidato1.txt")
-    except FileNotFoundError as e:
-        print(f"Error cargando archivos: {e}")
+    except Exception as e:
+        print(f"Error: {e}")
         return
 
     # 2. Análisis Fase 1
     analyzer = CVAnalyzer()
-    print("--- ANALIZANDO CV INICIAL ---")
+    print("--- FASE 1: ANÁLISIS ESTÁTICO ---")
     result = analyzer.analyze(text_offer, text_cv)
+    print(f"Score Inicial: {result.score}/100")
     
-    print("\n--- RESULTADO DE LA EVALUACIÓN (FASE 1) ---")
-    print(f"Score: {result.score}/100")
-    
-    # 3. Decisión: ¿Entrevistar o no?
+    # 3. Decisión
     if not result.discarded and result.not_found_requirements:
         print(f"\nRequisitos a validar: {result.not_found_requirements}")
-        print(f"🚀 Iniciando Agente de Entrevista...")
+        print(f"🚀 Iniciando Agente (LangGraph)...")
         
-        # Instancia correcta de la clase
         interviewer = Interviewer()
+        thread_id = str(uuid.uuid4())
         
-        # A) Ejecutar entrevista (Esto bloqueará la consola hasta que termine)
-        interviewer.conduct_interview(result.not_found_requirements)
+        # Saludo
+        bot_msg = interviewer.initialize_interview(result.not_found_requirements, thread_id)
+        print(f"\n🤖 Agente: {bot_msg.content}")
         
-        # B) Re-evaluar con la información nueva
-        final_result = interviewer.reevaluate(text_offer, text_cv)
+        # Bucle
+        active = True
+        while active:
+            user_input = input("👤 Candidato: ")
+            
+            # Procesar
+            response = interviewer.process_message(user_input, thread_id)
+            
+            # Limpiar token para el usuario
+            clean_response = response.content.replace("[FIN_ENTREVISTA]", "").strip()
+            print(f"\n🤖 Agente: {clean_response}")
+            
+            # CHECK DE PARADA: El agente ahora está forzado a emitir esto si terminó
+            if "[FIN_ENTREVISTA]" in response.content:
+                print("\n✅ Entrevista finalizada. Procediendo a re-evaluación...")
+                active = False # ROMPE EL BUCLE
         
-        print("\n=== 🏁 RESULTADO FINAL DEFINITIVO ===")
-        print(f"Score Final: {final_result.score}/100")
+        # 4. Reevaluación Automática
+        print("\n... Generando informe final ...")
+        final = interviewer.reevaluate(text_offer, text_cv, thread_id)
+        
+        print("\n=== 🏁 RESULTADO DEFINITIVO ===")
+        print(f"Score Final: {final.score}/100")
+        print(f"Decisión: {'⛔ DESCARTADO' if final.discarded else '🎉 CONTRATABLE'}")
+        print(f"Explicación:\n{final.explaination}")
 
     elif result.discarded:
-        print("\nEl candidato fue descartado en la fase 1. No se requiere entrevista.")
+        print("Candidato descartado en fase 1.")
     else:
-        print("\nEl candidato cumple todos los requisitos iniciales. No se requiere entrevista técnica extra.")
+        print("Candidato directo.")
 
 if __name__ == "__main__":
     main()
