@@ -145,7 +145,6 @@ if not st.session_state.analysis_done:
                         st.error(f"Candidato Descartado. Score: {result.score}")
                         st.markdown(f"**Motivo:** {result.explaination}")
                     else:
-                        st.balloons()
                         st.success(f"Candidato Perfecto. Score: {result.score}")
                         st.markdown(f"**Detalle:** {result.explaination}")
             
