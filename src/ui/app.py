@@ -182,7 +182,7 @@ if st.session_state.analysis_done and not st.session_state.finished:
             st.write(prompt)
 
         with st.chat_message("assistant"):
-            with st.spinner("Pensando..."):
+            with st.spinner("Velora..."):
                 try:
                     # Usamos la instancia persistente en session_state (la correcta)
                     response = st.session_state.interviewer.process_message(
@@ -205,7 +205,7 @@ if st.session_state.finished:
     st.success("🏁 Entrevista Finalizada")
     
     if st.button("Ver Informe Final"):
-        with st.spinner("Generando reporte definitivo..."):
+        with st.spinner("Generando valoración final..."):
             try:
                 final = st.session_state.interviewer.reevaluate(
                     st.session_state.offer_text, 

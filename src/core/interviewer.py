@@ -28,6 +28,7 @@ def registrar_validacion(skill: str, conclusion: str):
 # Clase principal del entrevistador
 class Interviewer:
     def __init__(self, provider):
+        self.provider = provider
         self.llm = get_llm(model_name=provider)
         self.tools = [registrar_validacion]
         self.llm_with_tools = self.llm.bind_tools(self.tools)
@@ -169,5 +170,5 @@ class Interviewer:
     def reevaluate(self, offer_text: str, original_cv: str, thread_id: str):
         transcript = self.get_transcript(thread_id)
         augmented_cv = f"{original_cv}\n=== TRANSCRIPCIÓN ENTREVISTA ===\n{transcript}"
-        analyzer = CVAnalyzer()
+        analyzer = CVAnalyzer(self.provider)
         return analyzer.analyze(offer_text, augmented_cv)
