@@ -1,21 +1,37 @@
 import streamlit as st
 import uuid
+import pandas as pd
 from langchain_core.messages import AIMessage, HumanMessage
 
 # Importaciones de tu lógica de negocio
 from src.core.evaluator import CVAnalyzer
 from src.core.interviewer import Interviewer
 
-# Configuración de la página
-st.set_page_config(page_title="Velora AI Agent", page_icon="🤖")
+# --- CONFIGURACIÓN DE PÁGINA ---
+st.set_page_config(page_title="Velora AI Agent", layout="wide")
+
+# --- FUNCIÓN AUXILIAR (CRUCIAL PARA GEMINI) ---
+def get_safe_content(msg_content):
+    """
+    Extrae el texto de un mensaje de LangChain de forma segura,
+    manejando tanto strings simples (OpenAI) como listas de bloques (Gemini).
+    """
+    if isinstance(msg_content, str):
+        return msg_content
+    elif isinstance(msg_content, list):
+        # Si es una lista, concatenamos las partes de texto
+        text_parts = []
+        for item in msg_content:
+            if isinstance(item, str):
+                text_parts.append(item)
+            elif isinstance(item, dict) and "text" in item:
+                text_parts.append(item["text"])
+        return "".join(text_parts)
+    return ""
 
 # --- GESTIÓN DE ESTADO (SESSION STATE) ---
 if "session_id" not in st.session_state:
     st.session_state.session_id = str(uuid.uuid4())
-
-# Instanciamos el entrevistador una sola vez por sesión
-if "interviewer" not in st.session_state:
-    st.session_state.interviewer = Interviewer()
 
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -26,145 +42,181 @@ if "finished" not in st.session_state:
 if "analysis_done" not in st.session_state:
     st.session_state.analysis_done = False
 
-# Guardamos los textos originales para la reevaluación final (Igual que main.py)
+# Textos originales
 if "offer_text" not in st.session_state:
     st.session_state.offer_text = ""
 if "cv_text" not in st.session_state:
     st.session_state.cv_text = ""
 
-# --- UI PRINCIPAL ---
-st.title("🤖 Velora: Agente de Entrevistas")
+# Datos de control
+if "active_requirements" not in st.session_state:
+    st.session_state.active_requirements = []
+if "current_score" not in st.session_state:
+    st.session_state.current_score = 0
 
-# BARRA LATERAL (Carga de archivos)
+# --- UI PRINCIPAL ---
+st.title("Velora: Agente de Entrevistas")
+
+# --- BARRA LATERAL ---
 with st.sidebar:
-    st.header("Documentos")
-    offer_file = st.file_uploader("Oferta (TXT)", type="txt")
-    cv_file = st.file_uploader("CV (TXT)", type="txt")
+    st.header("Configuración")
     
+    # 1. Selector de Proveedor (Para cambiar entre OpenAI y Gemini fácilmente)
+    llm_provider = st.selectbox(
+        "Modelo IA",
+        options=["openai", "gemini"],
+        index=0, # Por defecto OpenAI, cambia a 1 para Gemini por defecto
+        help="Selecciona el proveedor de LLM a utilizar."
+    )
+    
+    # Instanciamos el entrevistador con el proveedor seleccionado
+    # Si 'interviewer' no existe O si cambiamos de proveedor, lo recreamos
+    if "interviewer" not in st.session_state or getattr(st.session_state.interviewer, "provider_check", "") != llm_provider:
+        st.session_state.interviewer = Interviewer(provider=llm_provider)
+        # Guardamos un atributo dummy para saber qué proveedor tiene cargado actualmente
+        st.session_state.interviewer.provider_check = llm_provider
+
+    st.divider()
+    
+    # 2. Lógica de Archivos vs Panel de Entrevista
+    if not st.session_state.analysis_done:
+        st.subheader("Documentos")
+        offer_file = st.file_uploader("Oferta (TXT)", type="txt")
+        cv_file = st.file_uploader("CV (TXT)", type="txt")
+    
+    else:
+        st.subheader("🎯 Objetivo")
+        st.info("Validando puntos débiles:")
+        
+        st.metric("Score Pre-Entrevista", f"{st.session_state.current_score}/100")
+        
+        if st.session_state.active_requirements:
+            df_reqs = pd.DataFrame(
+                st.session_state.active_requirements, 
+                columns=["Requisitos"]
+            )
+            # Ajuste para evitar el warning de use_container_width
+            st.dataframe(df_reqs, hide_index=True, width='stretch')
+        else:
+            st.write("Sin requisitos pendientes.")
+
     st.divider()
     if st.button("Reiniciar Proceso"):
-        # Limpiamos todo para empezar de cero
         st.session_state.clear()
         st.rerun()
 
 # --- FASE 1: ANÁLISIS Y DECISIÓN ---
-# Solo ejecutamos si hay archivos y no hemos hecho el análisis aún
-if offer_file and cv_file and not st.session_state.analysis_done:
-    if st.button("Analizar Candidato"):
-        # 1. Leer y guardar textos
-        st.session_state.offer_text = offer_file.read().decode("utf-8")
-        st.session_state.cv_text = cv_file.read().decode("utf-8")
-        
-        analyzer = CVAnalyzer()
-        
-        with st.spinner("Realizando análisis estático (Fase 1)..."):
-            result = analyzer.analyze(st.session_state.offer_text, st.session_state.cv_text)
-        
-        # 2. LÓGICA DE DECISIÓN
-        
-        # CASO A: Requiere Entrevista (Pasa a la siguiente pantalla)
-        if not result.discarded and result.not_found_requirements:
-            st.session_state.analysis_done = True
+if not st.session_state.analysis_done:
+    if 'offer_file' in locals() and offer_file and 'cv_file' in locals() and cv_file:
+        if st.button("Analizar Candidato"):
             
-            # Inicializamos el Agente
-            initial_msg = st.session_state.interviewer.initialize_interview(
-                result.not_found_requirements, 
-                st.session_state.session_id
-            )
-            st.session_state.messages.append(initial_msg)
-            st.rerun()
+            st.session_state.offer_text = offer_file.read().decode("utf-8")
+            st.session_state.cv_text = cv_file.read().decode("utf-8")
             
-        # CASO B: Resultado Final Inmediato (Ya sea Descartado o Perfecto)
-        else:
-            st.divider()
-            st.subheader("🏁 Resultado Fase 1")
+            # Pasamos el proveedor seleccionado al Analyzer
+            analyzer = CVAnalyzer(provider=llm_provider)
             
-            # Columnas de Métricas (Igual que en el reporte final)
-            col1, col2 = st.columns(2)
-            col1.metric("Score Inicial", f"{result.score}/100")
+            with st.spinner(f"Analizando con {llm_provider.upper()}..."):
+                result = analyzer.analyze(st.session_state.offer_text, st.session_state.cv_text)
             
-            # Determinamos el estado y el color del mensaje
-            if result.discarded:
-                col2.metric("Estado", "⛔ DESCARTADO")
-                st.markdown("### 📝 Motivo del Descarte")
-                st.error(result.explaination) # Caja roja estética
-            else:
-                col2.metric("Estado", "🎉 DIRECTO (CUMPLE TODO)")
-                st.markdown("### 📝 Análisis")
-                st.success(result.explaination) # Caja verde estética
+            # --- LÓGICA DE DECISIÓN ---
             
-            # JSON Técnico (Lo que pediste)
-            with st.expander("Ver Datos Técnicos (JSON)"):
-                st.json(result.model_dump())
-
+            # A: Pasa a Entrevista
+            if not result.discarded and result.not_found_requirements:
+                st.session_state.analysis_done = True
                 
+                st.session_state.active_requirements = result.not_found_requirements
+                st.session_state.current_score = result.score
+                
+                initial_msg = st.session_state.interviewer.initialize_interview(
+                    result.not_found_requirements, 
+                    st.session_state.session_id
+                )
+                st.session_state.messages.append(initial_msg)
+                st.rerun()
+                
+            # B: Resultado Final Directo
+            else:
+                st.divider()
+                st.subheader("Resultado Fase 1")
+                
+                col1, col2 = st.columns(2)
+                col1.metric("Score Inicial", f"{result.score}/100")
+                
+                if result.discarded:
+                    col2.metric("Estado", "DESCARTADO")
+                    st.error(result.explaination)
+                else:
+                    col2.metric("Estado", "PERFECTO")
+                    st.success(result.explaination)
+                
+                with st.expander("JSON Técnico"):
+                    st.json(result.model_dump())
+
 # --- FASE 2: CHAT (ENTREVISTA) ---
 if st.session_state.analysis_done and not st.session_state.finished:
     
-    # 1. Renderizar historial
-    for msg in st.session_state.messages:
-        if isinstance(msg, AIMessage):
-            # Limpiamos el token visualmente
-            clean_text = msg.content.replace("[FIN_ENTREVISTA]", "")
-            if clean_text.strip():
-                with st.chat_message("assistant"):
-                    st.write(clean_text)
-        elif isinstance(msg, HumanMessage):
-            with st.chat_message("user"):
-                st.write(msg.content)
+    chat_container = st.container()
 
-    # 2. Input del Usuario
+    with chat_container:
+        for msg in st.session_state.messages:
+            
+            # 1. Usamos la función segura para obtener el texto
+            content_str = get_safe_content(msg.content)
+            
+            if isinstance(msg, AIMessage):
+                clean_text = content_str.replace("[FIN_ENTREVISTA]", "")
+                if clean_text.strip():
+                    with st.chat_message("assistant"):
+                        st.write(clean_text)
+            elif isinstance(msg, HumanMessage):
+                with st.chat_message("user"):
+                    st.write(content_str)
+
     if prompt := st.chat_input("Responde al entrevistador..."):
-        # A. Mostrar mensaje usuario
         st.session_state.messages.append(HumanMessage(content=prompt))
         with st.chat_message("user"):
             st.write(prompt)
 
-        # B. Procesar con el Agente
         with st.chat_message("assistant"):
             with st.spinner("..."):
-                # Llamada al grafo (Igual que main.py: process_message)
                 response = st.session_state.interviewer.process_message(
                     prompt, st.session_state.session_id
                 )
                 
-                # Guardar en historial de sesión UI
                 st.session_state.messages.append(response)
                 
-                # Mostrar respuesta limpia
-                clean_response = response.content.replace("[FIN_ENTREVISTA]", "")
+                # Procesamos respuesta segura
+                response_str = get_safe_content(response.content)
+                clean_response = response_str.replace("[FIN_ENTREVISTA]", "")
+                
                 st.write(clean_response)
                 
-                # C. Chequeo de Parada (Igual que main.py)
-                if "[FIN_ENTREVISTA]" in response.content:
+                if "[FIN_ENTREVISTA]" in response_str:
                     st.session_state.finished = True
                     st.rerun()
 
 # --- FASE 3: RE-EVALUACIÓN FINAL ---
 if st.session_state.finished:
-    st.success("✅ Entrevista finalizada.")
+    st.success("Entrevista finalizada.")
     
-    with st.spinner("Analizando la transcripción completa y re-calculando score..."):
+    with st.spinner("Calculando resultado final..."):
         
-        # 1. Llamada EXACTA a la lógica de main.py
-        # Pasamos: Oferta Original, CV Original, ID de Hilo (para sacar la transcripción de memoria)
         final_result = st.session_state.interviewer.reevaluate(
             st.session_state.offer_text,
             st.session_state.cv_text,
             st.session_state.session_id
         )
         
-        # 2. Mostrar Resultados
         st.divider()
         st.subheader("🏁 Resultado Definitivo")
         
-        col1, col2 = st.columns(2)
-        col1.metric("Score Final", f"{final_result.score}/100")
-        col2.metric("Decisión", "🎉 CONTRATABLE" if not final_result.discarded else "⛔ DESCARTADO")
+        col1, col2, col3 = st.columns(3)
+        col1.metric("Score Inicial", f"{st.session_state.current_score}/100")
+        col2.metric("Score Final", f"{final_result.score}/100", delta=final_result.score - st.session_state.current_score)
+        col3.metric("Decisión", "🎉 CONTRATABLE" if not final_result.discarded else "⛔ DESCARTADO")
         
-        st.markdown("### 📝 Explicación Detallada")
         st.info(final_result.explaination)
         
-        # Opcional: Mostrar JSON crudo en un expander
-        with st.expander("Ver JSON Técnico"):
+        with st.expander("JSON Técnico"):
             st.json(final_result.model_dump())

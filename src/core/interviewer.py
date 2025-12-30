@@ -27,8 +27,8 @@ def registrar_validacion(skill: str, conclusion: str):
 
 # --- 3. CLASE INTERVIEWER ---
 class Interviewer:
-    def __init__(self):
-        self.llm = get_llm()
+    def __init__(self, provider="gemini"):
+        self.llm = get_llm(model_name=provider)
         self.tools = [registrar_validacion]
         self.llm_with_tools = self.llm.bind_tools(self.tools)
         self.memory = MemorySaver()
