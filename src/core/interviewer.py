@@ -12,12 +12,12 @@ from langgraph.checkpoint.memory import MemorySaver
 from src.llm.factory import get_llm
 from src.core.evaluator import CVAnalyzer
 
-# --- 1. ESTADO DEL AGENTE ---
+# Estado del agente
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     skills_pending: List[str] # Esta lista se irá vaciando automáticamente
 
-# --- 2. HERRAMIENTA ---
+# tool para registrar la validación de una skill
 @tool
 def registrar_validacion(skill: str, conclusion: str):
     """
@@ -25,9 +25,9 @@ def registrar_validacion(skill: str, conclusion: str):
     """
     return f"Validación guardada para '{skill}'."
 
-# --- 3. CLASE INTERVIEWER ---
+# Clase principal del entrevistador
 class Interviewer:
-    def __init__(self, provider="gemini"):
+    def __init__(self, provider):
         self.llm = get_llm(model_name=provider)
         self.tools = [registrar_validacion]
         self.llm_with_tools = self.llm.bind_tools(self.tools)
@@ -36,14 +36,12 @@ class Interviewer:
 
     def _build_graph(self):
         
-        # --- NODO CHATBOT (CEREBRO) ---
+        # nodo de chatbot principal
         def chatbot_node(state: AgentState):
             messages = state["messages"]
             pending = state.get("skills_pending", [])
             
-            # --- LÓGICA DE TERMINACIÓN FORZADA ---
-            # Si la lista está vacía, inyectamos una instrucción oculta
-            # para OBLIGAR al LLM a poner el token de fin, diga lo que diga el usuario.
+            # Logica para forzar la salida si no quedan requisitos
             if not pending:
                 force_exit_msg = SystemMessage(content="""
                 SISTEMA: Ya no quedan requisitos pendientes. 
@@ -54,11 +52,10 @@ class Interviewer:
                 response = self.llm_with_tools.invoke(messages + [force_exit_msg])
                 return {"messages": [response]}
             
-            # Comportamiento normal (Entrevista)
+            # Comportamiento normal 
             return {"messages": [self.llm_with_tools.invoke(messages)]}
 
-        # --- NODO DE HERRAMIENTAS PERSONALIZADO ---
-        # Este nodo ejecuta la herramienta Y ADEMÁS actualiza la lista 'skills_pending'
+        # nodo de herramientas personalizado
         def custom_tool_node(state: AgentState):
             messages = state["messages"]
             last_message = messages[-1]
@@ -69,9 +66,9 @@ class Interviewer:
             # Iteramos sobre las llamadas a herramientas que pidió el LLM
             for tool_call in last_message.tool_calls:
                 if tool_call["name"] == "registrar_validacion":
-                    # 1. Ejecutar la lógica de la herramienta (Simulada o real)
+                    # 1. Ejecutar la lógica 
                     skill_evaluated = tool_call["args"]["skill"]
-                    output_text = registrar_validacion.invoke(tool_call) # Ejecución real
+                    output_text = registrar_validacion.invoke(tool_call) 
                     
                     # 2. Crear el mensaje de respuesta de la herramienta
                     tool_outputs.append(ToolMessage(
@@ -80,8 +77,7 @@ class Interviewer:
                         name=tool_call["name"]
                     ))
                     
-                    # 3. ACTUALIZAR EL ESTADO (Borrar skill de la lista)
-                    # Buscamos coincidencias flexibles (ignorando mayúsculas)
+                    # 3. actualizar la lista de pendientes y estado
                     for req in pending[:]:
                         if req.lower() in skill_evaluated.lower() or skill_evaluated.lower() in req.lower():
                             if req in pending:
@@ -93,11 +89,11 @@ class Interviewer:
                 "skills_pending": pending
             }
 
-        # --- DEFINICIÓN DEL GRAFO ---
+        # definicion del workflow
         workflow = StateGraph(AgentState)
         
         workflow.add_node("agent", chatbot_node)
-        workflow.add_node("tools", custom_tool_node) # Usamos nuestro nodo inteligente
+        workflow.add_node("tools", custom_tool_node) 
 
         workflow.set_entry_point("agent")
         
