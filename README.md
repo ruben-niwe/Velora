@@ -7,7 +7,7 @@
 2. **Clonar el repositorio:**
    Abre un terminal y ejecuta:
    ```bash
-   git clone [https://github.com/ruben-niwe/Velora.git](https://github.com/ruben-niwe/Velora.git)
+   git clone https://github.com/ruben-niwe/Velora.git
    cd Velora
 
 3. **Configurar las variables de entorno**
