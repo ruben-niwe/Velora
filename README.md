@@ -36,16 +36,20 @@
    git clone https://github.com/ruben-niwe/Velora.git
    cd Velora
 
-3. **Crear y activar el entorno virtual**:
-En windows abre un terminal y ejecuta:
-    ```bash
-    python -m venv env
-    .\env\Script\activate
+### 3. Crear y activar el entorno virtual
 
-y si tienes Mac/Linux ejecuta
-    ```bash
-    python -m venv env
-    ./env/Script/activate
+#### En **Windows**
+Abre una terminal (CMD o PowerShell) y ejecuta:
+
+```bash
+python -m venv env
+.\env\Scripts\activate
+```
+#### En Mac o Linux
+```bash
+python -m venv env
+source env/bin/activate
+```
 
 4. **Instalar dependencias**: Una vez activado el entorno, instala las librerias necesarias
     ```bash
