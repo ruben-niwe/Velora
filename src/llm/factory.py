@@ -67,4 +67,4 @@ def get_llm(model_name: str):
     elif model_name.lower() == "gemini":
         return get_llm_gemini()
     else:
-        return get_llm_openai()  # Por defecto OpenAI
+        return None # Por defecto, no soportado
