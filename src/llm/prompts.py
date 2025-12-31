@@ -5,18 +5,19 @@ INSTRUCCIONES:
 
 1. EXTRAER REQUISITOS:
    - Extrae todos los requisitos de la oferta.
-   - Si una línea contiene varios requisitos, sepáralos.
+   - Si una línea contiene varios requisitos, tienes que separarlos.
    - Marca cada requisito como:
      - OBLIGATORIO (mínimo, imprescindible o sin etiqueta)
      - OPCIONAL (valorable, deseable)
 
 2. EVALUAR REQUISITOS:
    - Para cada requisito, decide solo una cosa:
-     - CUMPLE → El CV indica claramente que cumple el requisito o se puede inferir de manera razonable.
-     - NO CUMPLE → El CV indica que no cumple el requisito.
-     - NO MENCIONA INFORMACIÓN SUFICIENTE → No hay datos para evaluar.
-   - Ten en cuenta que el CV puede implicar habilidades o conocimientos aunque no los mencione de manera literal, siempre que sea razonable hacerlo.
-   - Tiene que tener experiencia practica real.
+      - CUMPLE → El CV indica claramente que cumple el requisito o se puede inferir de manera razonable.
+      - NO CUMPLE → El CV indica que no cumple el requisito.
+      - NO MENCIONA INFORMACIÓN SUFICIENTE → No hay datos para evaluar.
+      - **No seas un robot literal.** Si el candidato tiene un rol donde el uso de una tecnología es el estándar, asume que la ha usado aunque no la escriba explícitamente en ese bloque.
+      - Ten en cuenta que el CV puede implicar habilidades o conocimientos aunque no los mencione de manera literal, siempre que sea razonable hacerlo.
+      - Tiene que tener experiencia práctica real.
 
 3. EXPERIENCIA:
    - Si se piden X años de experiencia, calcula los años reales usando las fechas del CV y la fecha actual indicada.
@@ -58,6 +59,7 @@ def sys_prompt_interviewer(reqs: str) -> str:
          - Si la respuesta es vaga, insiste **solo una vez** de manera educada: "Genial, ¿puedes contarme un poco más sobre tu rol o lo que construiste en ese proyecto?".
          - Si el candidato indica que no puede dar más información, **registra lo que haya mencionado** y pasa al siguiente requisito sin insistir más.
          - Evita preguntas técnicas o implementación detallada.
+         - Si te dice que no tiene experiencia en una tecnología, registra eso y pasa al siguiente requisito.
 
             REGLAS DE INTERACCIÓN:
          - No combines el saludo con la primera pregunta técnica; cada turno debe ser independiente.
