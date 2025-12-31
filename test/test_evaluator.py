@@ -38,7 +38,7 @@ class TestCVAnalyzer:
         mock_llm_instance = MagicMock()
         mock_get_llm.return_value = mock_llm_instance
         
-        # Configurar el 'structured_llm' (lo que devuelve .with_structured_output)
+        # Configurar el 'structured_llm'
         mock_structured_llm = MagicMock()
         mock_llm_instance.with_structured_output.return_value = mock_structured_llm
 
@@ -49,7 +49,7 @@ class TestCVAnalyzer:
         mock_chain = MagicMock()
         mock_prompt_instance.__or__.return_value = mock_chain
         
-        # Configurar el resultado de .invoke()
+        # 4. Configurar el resultado de .invoke()
         mock_chain.invoke.return_value = expected_result
 
         # 5. Ejecutar la clase bajo test

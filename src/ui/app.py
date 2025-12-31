@@ -27,7 +27,7 @@ if "locked" not in st.session_state:
 if "messages" not in st.session_state:
     st.session_state.messages = []
 if "interviewer" not in st.session_state:
-    st.session_state.interviewer = None # Aquí guardaremos la instancia del entrevistador
+    st.session_state.interviewer = None 
 if "current_score" not in st.session_state:
     st.session_state.current_score = 0
 if "offer_text" not in st.session_state:
@@ -37,7 +37,7 @@ if "cv_text" not in st.session_state:
 if "active_requirements" not in st.session_state:
     st.session_state.active_requirements = []
 
-# Inicializamos el proveedor por defecto si no existe
+# Inicializamos el proveedor por defecto
 if "selected_provider" not in st.session_state:
     st.session_state.selected_provider = "openai"
 
@@ -51,8 +51,7 @@ with st.sidebar:
     st.header("Configuración")
     
     # 1. SELECTOR DE MODELO (CON BLOQUEO)
-    # Usamos 'key' para vincularlo a session_state automáticamente.
-    # Usamos 'disabled' para que se ponga gris y no se pueda cambiar si ya empezamos.
+    # El parámetro disabled usa la variable de estado 'locked'
     st.selectbox(
         "Proveedor de IA",
         options=["openai", "gemini"],
@@ -61,17 +60,26 @@ with st.sidebar:
         help="El modelo se bloqueará una vez inicies el análisis."
     )
     
-    # Mensaje de estado del bloqueo
+    # Mensaje visual si está bloqueado
     if st.session_state.locked:
-        st.caption(f"Motor bloqueado en: **{st.session_state.selected_provider.upper()}**")
+        st.caption(f"🔒 Motor bloqueado en: **{st.session_state.selected_provider.upper()}**")
 
     st.divider()
 
     # 2. CARGA DE ARCHIVOS
-    # También bloqueamos la subida de nuevos archivos si ya estamos analizando
+    # Se bloquean (disabled) si 'locked' es True.
+    # Desaparecen si 'analysis_done' es True.
     if not st.session_state.analysis_done:
-        offer_file = st.file_uploader("Oferta (TXT)", type="txt", disabled=st.session_state.locked)
-        cv_file = st.file_uploader("CV (TXT)", type="txt", disabled=st.session_state.locked)
+        offer_file = st.file_uploader(
+            "Oferta (TXT)", 
+            type="txt", 
+            disabled=st.session_state.locked
+        )
+        cv_file = st.file_uploader(
+            "CV (TXT)", 
+            type="txt", 
+            disabled=st.session_state.locked
+        )
     else:
         # Panel de información durante la entrevista
         st.metric("Score CV", f"{st.session_state.current_score}/100")
@@ -82,7 +90,7 @@ with st.sidebar:
 
     st.divider()
     
-    # Botón de reinicio completo
+    # Botón de reinicio completo (Siempre habilitado para poder salir)
     if st.button("Reiniciar Todo", type="primary"):
         st.session_state.clear()
         st.rerun()
@@ -93,29 +101,37 @@ with st.sidebar:
 
 # --- FASE 1: ANÁLISIS ---
 if not st.session_state.analysis_done:
+    # Verificamos que existan los archivos antes de mostrar el botón
+    # Usamos locals() para evitar errores si las variables no se definieron arriba
     if 'offer_file' in locals() and offer_file and 'cv_file' in locals() and cv_file:
         
-        if st.button("Analizar Candidato"):
-            
-            # 1. BLOQUEAR LA INTERFAZ
-            st.session_state.locked = True
-            
-            # 2. CAPTURAR PROVEEDOR ACTUAL
+        # El botón desaparece si ya estamos bloqueados (procesando o finalizado sin entrevista)
+        if not st.session_state.locked:
+            if st.button("Analizar Candidato"):
+                
+                # 1. BLOQUEAR LA INTERFAZ
+                st.session_state.locked = True
+                st.rerun() # Recargamos para que el bloqueo visual se aplique inmediatamente
+        
+        # Si está bloqueado y no hemos terminado, ejecutamos la lógica (esto pasa tras el rerun)
+        if st.session_state.locked:
             provider_actual = st.session_state.selected_provider
             
-            # Toast de confirmación visual
+            # Toast solo la primera vez
             st.toast(f"Iniciando motor con: {provider_actual.upper()}")
 
             try:
                 # 3. LEER ARCHIVOS
+                # Reset del puntero por seguridad
+                offer_file.seek(0)
+                cv_file.seek(0)
                 st.session_state.offer_text = offer_file.read().decode("utf-8")
                 st.session_state.cv_text = cv_file.read().decode("utf-8")
                 
-                # 4. INSTANCIAR ANALYZER (Aquí saltará el error si falta la Key)
-                # Pasamos explícitamente el proveedor seleccionado
+                # 4. INSTANCIAR ANALYZER
                 analyzer = CVAnalyzer(provider=provider_actual)
                 
-                with st.spinner(f"Velora esta analizando tu CV..."):
+                with st.spinner(f"Velora está analizando tu CV..."):
                     result = analyzer.analyze(st.session_state.offer_text, st.session_state.cv_text)
                 
                 # Guardar score inicial
@@ -127,7 +143,7 @@ if not st.session_state.analysis_done:
                     st.session_state.analysis_done = True
                     st.session_state.active_requirements = result.not_found_requirements
                     
-                    # 5. INSTANCIAR INTERVIEWER (Con el mismo proveedor)
+                    # 5. INSTANCIAR INTERVIEWER
                     st.session_state.interviewer = Interviewer(provider=provider_actual)
                     
                     # Generar primera pregunta
@@ -145,17 +161,19 @@ if not st.session_state.analysis_done:
                         st.error(f"Candidato Descartado. Score: {result.score}")
                         st.markdown(f"**Motivo:** {result.explaination}")
                     else:
+                        st.balloons()
                         st.success(f"Candidato Perfecto. Score: {result.score}")
                         st.markdown(f"**Detalle:** {result.explaination}")
+                    
+                    # Nota: Mantenemos st.session_state.locked = True aquí
+                    # para obligar al usuario a usar "Reiniciar Todo" si quiere probar otro.
             
             except ValueError as ve:
-                # Captura específica de errores de tu Factory (Falta de API Key)
                 st.error(str(ve))
-                st.session_state.locked = False # Desbloqueamos para permitir cambiar modelo
+                st.session_state.locked = False # Desbloqueamos en error
             except Exception as e:
-                # Otros errores
                 st.error(f"Error inesperado: {e}")
-                st.session_state.locked = False
+                st.session_state.locked = False # Desbloqueamos en error
 
 # --- FASE 2: CHAT ---
 if st.session_state.analysis_done and not st.session_state.finished:
@@ -183,7 +201,6 @@ if st.session_state.analysis_done and not st.session_state.finished:
         with st.chat_message("assistant"):
             with st.spinner("Velora..."):
                 try:
-                    # Usamos la instancia persistente en session_state (la correcta)
                     response = st.session_state.interviewer.process_message(
                         prompt, st.session_state.session_id
                     )
