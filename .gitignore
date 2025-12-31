@@ -1,4 +1,3 @@
 envVelora/
-.env
 *.pyc
 __pycache__/

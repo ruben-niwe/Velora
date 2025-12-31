@@ -11,7 +11,7 @@
    cd Velora
 
 3. **Configurar las variables de entorno**
-    A la misma altura del archivo `main.py` crear un archivo `.env` con la siguiente informacion: 
+    A la misma altura del archivo `Dockerfile` crear un archivo `.env` con la siguiente informacion: 
     `OPENAI_API_KEY = "sk-proj-..."`
     `GOOGLE_API_KEY = "AI..."`
 
@@ -57,7 +57,7 @@ source env/bin/activate
     pip install -r requirements.txt
 
 5. **Configurar las variables de entorno**
-    A la misma altura del archivo `main.py` crear un archivo `.env` con la siguiente informacion: 
+    A la misma altura del archivo `Dockerfile` crear un archivo `.env` con la siguiente informacion: 
     `OPENAI_API_KEY = "sk-proj-..."`
     `GOOGLE_API_KEY = "AI..."`
 
