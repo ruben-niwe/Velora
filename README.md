@@ -11,7 +11,9 @@
    cd Velora
 
 3. **Configurar las variables de entorno**
-    A la misma altura del archivo `main.py` crear un archivo `.env` con la siguiente informacion: `OPENAI_API_KEY = "sk-proj-..."`
+    A la misma altura del archivo `main.py` crear un archivo `.env` con la siguiente informacion: 
+    `OPENAI_API_KEY = "sk-proj-..."`
+    `GOOGLE_API_KEY = "AI..."`
 
 4. **Configurar init_config.sh**
     Es importante que el init_config.sh tenga configuración LF para poder cargar, si tiene configuración CRLF cambiar a LF. 
