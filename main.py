@@ -1,13 +1,13 @@
 import uuid
-from src.utils.file_loader import load_cv, load_offer
+from src.utils.file_loader import read_data_file, read_data_file
 from src.core.evaluator import CVAnalyzer
 from src.core.interviewer import Interviewer 
 
 def main():
     # 1. Cargar Archivos
     try:
-        text_offer = load_offer(filename="oferta1.txt") 
-        text_cv = load_cv(filename="cv_candidato1.txt")
+        text_offer = read_data_file(filename="oferta1.txt") 
+        text_cv = read_data_file(filename="cv_candidato1.txt")
     except Exception as e:
         print(f"Error: {e}")
         return
