@@ -8,7 +8,7 @@ load_dotenv()  # Carga las variables de entorno desde el archivo .env
 def get_safe_content(msg_content):
     """
     Extrae el texto de un mensaje de LangChain de forma segura,
-    - Maneja diferentes formatos de contenido,
+    - Maneja diferentes formatos de contenido:
     - string simples para OpenAI
     - listas de bloques para Gemini.
     """
@@ -28,7 +28,6 @@ def get_safe_content(msg_content):
 def get_llm_openai():
     """
     Instancia específica para OpenAI.
-
     """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -41,6 +40,9 @@ def get_llm_openai():
     )
 
 def get_llm_gemini():
+    """
+    Instancia específica para Gemini.
+    """
 
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
@@ -53,9 +55,16 @@ def get_llm_gemini():
     )
 
 def get_llm(model_name: str):
+    """
+    Instancia el LLM según el proveedor indicado.
+    Soporta 'openai' y 'gemini'.
+    Por defecto, usa OpenAI.
+    """
 
     if model_name.lower() == "openai":
         return get_llm_openai()
 
     elif model_name.lower() == "gemini":
         return get_llm_gemini()
+    else:
+        return get_llm_openai()  # Por defecto OpenAI
