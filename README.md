@@ -37,12 +37,12 @@
    cd Velora
 
 3. **Crear y activar el entorno virtual**:
-    En windows abre un terminal y ejecuta:
+En windows abre un terminal y ejecuta:
     ```bash
     python -m venv env
     .\env\Script\activate
 
-    y si tienes Mac/Linux ejecuta
+y si tienes Mac/Linux ejecuta
     ```bash
     python -m venv env
     ./env/Script/activate
