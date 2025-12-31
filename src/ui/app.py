@@ -9,7 +9,41 @@ from src.core.interviewer import Interviewer
 from src.llm.factory import get_safe_content
 
 # --- CONFIGURACIÓN DE PÁGINA ---
-st.set_page_config(page_title="Velora AI Recruiter", layout="wide")
+st.set_page_config(page_title="Velora AI Recruiter", layout="wide", page_icon="🤖")
+
+# --- FUNCIÓN DE VISUALIZACIÓN COMÚN ---
+def mostrar_informe_final(result, initial_score=None):
+    """
+    Renderiza el informe final con métricas, decisión, explicación y JSON.
+    Se usa tanto para resultados directos (Fase 1) como post-entrevista (Fase 3).
+    """
+    st.divider()
+    st.subheader("🏁 Informe Técnico Final")
+
+    # 1. Métricas (KPIs)
+    col1, col2, col3 = st.columns(3)
+    
+    # Si no hay score inicial (Fase 1 directa), el inicial es igual al final
+    start_score = initial_score if initial_score is not None else result.score
+    delta = result.score - start_score
+    
+    col1.metric("Score Inicial", f"{start_score}/100")
+    col2.metric("Score Final", f"{result.score}/100", delta=delta if delta != 0 else None)
+    
+    decision_label = "✅ CONTRATAR" if not result.discarded else "❌ DESCARTAR"
+    # Color visual para la decisión
+    decision_color = "green" if not result.discarded else "red"
+    col3.markdown(f"**Decisión:** :{decision_color}[{decision_label}]")
+
+    # 2. Explicación Detallada
+    st.markdown("### 📝 Evaluación Detallada")
+    with st.container(border=True):
+        st.markdown(result.explaination)
+    
+    # 3. Datos Técnicos (JSON)
+    with st.expander("💾 Ver JSON Técnico (Datos Crudos)"):
+        st.json(result.model_dump())
+
 
 # --- GESTIÓN DE ESTADO (SESSION STATE) ---
 if "session_id" not in st.session_state:
@@ -21,7 +55,7 @@ if "analysis_done" not in st.session_state:
 if "finished" not in st.session_state:
     st.session_state.finished = False
 if "locked" not in st.session_state:
-    st.session_state.locked = False # Variable maestra para bloquear la UI
+    st.session_state.locked = False 
 
 # Variables de datos
 if "messages" not in st.session_state:
@@ -50,8 +84,7 @@ st.title("🤖 Velora: AI Technical Recruiter")
 with st.sidebar:
     st.header("Configuración")
     
-    # 1. SELECTOR DE MODELO (CON BLOQUEO)
-    # El parámetro disabled usa la variable de estado 'locked'
+    # 1. SELECTOR DE MODELO
     st.selectbox(
         "Proveedor de IA",
         options=["openai", "gemini"],
@@ -60,15 +93,12 @@ with st.sidebar:
         help="El modelo se bloqueará una vez inicies el análisis."
     )
     
-    # Mensaje visual si está bloqueado
     if st.session_state.locked:
         st.caption(f"🔒 Motor bloqueado en: **{st.session_state.selected_provider.upper()}**")
 
     st.divider()
 
     # 2. CARGA DE ARCHIVOS
-    # Se bloquean (disabled) si 'locked' es True.
-    # Desaparecen si 'analysis_done' es True.
     if not st.session_state.analysis_done:
         offer_file = st.file_uploader(
             "Oferta (TXT)", 
@@ -81,7 +111,7 @@ with st.sidebar:
             disabled=st.session_state.locked
         )
     else:
-        # Panel de información durante la entrevista
+        # Panel de información post-análisis (solo si hubo entrevista)
         st.metric("Score CV", f"{st.session_state.current_score}/100")
         if st.session_state.active_requirements:
             with st.expander("Requisitos a Evaluar"):
@@ -90,7 +120,7 @@ with st.sidebar:
 
     st.divider()
     
-    # Botón de reinicio completo (Siempre habilitado para poder salir)
+    # Botón de reinicio
     if st.button("Reiniciar Todo", type="primary"):
         st.session_state.clear()
         st.rerun()
@@ -101,52 +131,43 @@ with st.sidebar:
 
 # --- FASE 1: ANÁLISIS ---
 if not st.session_state.analysis_done:
-    # Verificamos que existan los archivos antes de mostrar el botón
-    # Usamos locals() para evitar errores si las variables no se definieron arriba
     if 'offer_file' in locals() and offer_file and 'cv_file' in locals() and cv_file:
         
-        # El botón desaparece si ya estamos bloqueados (procesando o finalizado sin entrevista)
+        # Botón de inicio
         if not st.session_state.locked:
             if st.button("Analizar Candidato"):
-                
-                # 1. BLOQUEAR LA INTERFAZ
                 st.session_state.locked = True
-                st.rerun() # Recargamos para que el bloqueo visual se aplique inmediatamente
+                st.rerun() 
         
-        # Si está bloqueado y no hemos terminado, ejecutamos la lógica (esto pasa tras el rerun)
+        # Ejecución lógica
         if st.session_state.locked:
             provider_actual = st.session_state.selected_provider
-            
-            # Toast solo la primera vez
             st.toast(f"Iniciando motor con: {provider_actual.upper()}")
 
             try:
-                # 3. LEER ARCHIVOS
-                # Reset del puntero por seguridad
+                # Lectura
                 offer_file.seek(0)
                 cv_file.seek(0)
                 st.session_state.offer_text = offer_file.read().decode("utf-8")
                 st.session_state.cv_text = cv_file.read().decode("utf-8")
                 
-                # 4. INSTANCIAR ANALYZER
+                # Análisis
                 analyzer = CVAnalyzer(provider=provider_actual)
                 
                 with st.spinner(f"Velora está analizando tu CV..."):
                     result = analyzer.analyze(st.session_state.offer_text, st.session_state.cv_text)
                 
-                # Guardar score inicial
                 st.session_state.current_score = result.score
                 
                 # --- DECISIÓN DEL SISTEMA ---
+                
+                # CASO A: Pasamos a entrevista (No descartado Y faltan requisitos)
                 if not result.discarded and result.not_found_requirements:
-                    # A. PASA A ENTREVISTA
                     st.session_state.analysis_done = True
                     st.session_state.active_requirements = result.not_found_requirements
                     
-                    # 5. INSTANCIAR INTERVIEWER
                     st.session_state.interviewer = Interviewer(provider=provider_actual)
                     
-                    # Generar primera pregunta
                     initial_msg = st.session_state.interviewer.initialize_interview(
                         result.not_found_requirements, 
                         st.session_state.session_id
@@ -154,25 +175,24 @@ if not st.session_state.analysis_done:
                     st.session_state.messages.append(initial_msg)
                     st.rerun()
                 
+                # CASO B: Resultado Directo (Descartado O Perfecto)
                 else:
-                    # B. RESULTADO FINAL DIRECTO
-                    st.divider()
-                    if result.discarded:
-                        st.error(f"Candidato Descartado. Score: {result.score}")
-                        st.markdown(f"**Motivo:** {result.explaination}")
-                    else:
-                        st.success(f"Candidato Perfecto. Score: {result.score}")
-                        st.markdown(f"**Detalle:** {result.explaination}")
+                    # Aquí usamos la nueva función para mostrar el informe COMPLETO
+                    # Pasamos initial_score=result.score para que el delta sea 0
+                    mostrar_informe_final(result, initial_score=result.score)
                     
-                    # Nota: Mantenemos st.session_state.locked = True aquí
-                    # para obligar al usuario a usar "Reiniciar Todo" si quiere probar otro.
-            
+                    # Mensaje extra visual
+                    if result.discarded:
+                        st.error("El proceso se ha detenido automáticamente por criterios de descarte.")
+                    else:
+                        st.success("¡Perfil 100% compatible! No se requiere entrevista adicional.")
+
             except ValueError as ve:
                 st.error(str(ve))
-                st.session_state.locked = False # Desbloqueamos en error
+                st.session_state.locked = False
             except Exception as e:
                 st.error(f"Error inesperado: {e}")
-                st.session_state.locked = False # Desbloqueamos en error
+                st.session_state.locked = False
 
 # --- FASE 2: CHAT ---
 if st.session_state.analysis_done and not st.session_state.finished:
@@ -214,12 +234,10 @@ if st.session_state.analysis_done and not st.session_state.finished:
                 except Exception as e:
                     st.error(f"Error de conexión: {e}")
 
-# --- FASE 3: RESULTADOS ---
+# --- FASE 3: RESULTADOS (Solo tras entrevista) ---
 if st.session_state.finished:
-    st.divider()
-    st.success("🏁 Entrevista Finalizada")
     
-    if st.button("Ver Informe Final"):
+    if st.button("Ver Informe Final Actualizado"):
         with st.spinner("Generando valoración final..."):
             try:
                 final = st.session_state.interviewer.reevaluate(
@@ -228,17 +246,8 @@ if st.session_state.finished:
                     st.session_state.session_id
                 )
                 
-                c1, c2, c3 = st.columns(3)
-                c1.metric("Score Inicial", st.session_state.current_score)
-                c2.metric("Score Final", final.score, delta=final.score - st.session_state.current_score)
-                decision = "CONTRATAR" if not final.discarded else "DESCARTAR"
-                c3.metric("Decisión", decision)
-                
-                st.subheader("Informe Técnico")
-                st.info(final.explaination)
-                
-                with st.expander("JSON Técnico"):
-                    st.json(final.model_dump())
+                # Usamos la misma función visual
+                mostrar_informe_final(final, initial_score=st.session_state.current_score)
 
             except Exception as e:
                 st.error(f"Error generando reporte: {e}")
