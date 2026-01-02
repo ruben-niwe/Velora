@@ -22,9 +22,7 @@ class TestCVAnalyzer:
         
         return offer_text, cv_text, expected_result
 
-    # Patcheamos get_llm para evitar instanciar un modelo real
     @patch('src.core.evaluator.get_llm') 
-    # Patcheamos ChatPromptTemplate para controlar la creación del prompt y la cadena
     @patch('src.core.evaluator.ChatPromptTemplate') 
     def test_analyze_flow_success(self, mock_prompt_cls, mock_get_llm, mock_dependencies):
         """

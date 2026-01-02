@@ -31,10 +31,7 @@ class TestContentParser:
 class TestLLMFactory:
     """Tests para la creación de LLMs (OpenAI y Gemini)"""
 
-    # ----------------------------------------------------------------
     # TESTS PARA OPENAI
-    # ----------------------------------------------------------------
-
     @patch("src.llm.factory.ChatOpenAI") # Mockeamos la clase de LangChain
     def test_get_llm_openai_success(self, mock_chat_openai):
         """
@@ -68,10 +65,7 @@ class TestLLMFactory:
             
             assert "Api Key de OpenAI no encontrada" in str(excinfo.value)
 
-    # ----------------------------------------------------------------
     # TESTS PARA GEMINI
-    # ----------------------------------------------------------------
-
     @patch("src.llm.factory.ChatGoogleGenerativeAI") # Mockeamos la clase de Google
     def test_get_llm_gemini_success(self, mock_chat_google):
         """
@@ -99,10 +93,7 @@ class TestLLMFactory:
             
             assert "Api Key de Google no encontrada" in str(excinfo.value)
 
-    # ----------------------------------------------------------------
     # TESTS DE LÓGICA GENERAL
-    # ----------------------------------------------------------------
-
     @patch("src.llm.factory.get_llm_openai")
     def test_factory_case_insensitive(self, mock_get_openai):
         """Verifica que 'OpenAI', 'openai' y 'OPENAI' funcionen igual."""

@@ -61,7 +61,6 @@ class TestInterviewer:
         response = interviewer.process_message(user_input, thread_id)
         assert response == expected_response
 
-    # IMPORTANTE: Parcheamos la clase EN el módulo interviewer
     @patch('src.core.interviewer.CVAnalyzer') 
     def test_reevaluate_logic(self, mock_analyzer_cls, interviewer):
         thread_id = "test_thread_3"
@@ -81,7 +80,6 @@ class TestInterviewer:
         interviewer.reevaluate(offer_text, original_cv, thread_id)
 
         # 4. Verificar
-        # Ahora sí debería funcionar porque hemos interceptado la clase correcta
         mock_instance.analyze.assert_called_once()
         
         # Verificamos que se pasó el texto concatenado

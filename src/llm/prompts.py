@@ -41,6 +41,7 @@ INSTRUCCIONES:
 7. REGLAS ADICIONALES:
    - No inventes información. Evalúa solo con los datos del CV y con inferencias razonables basadas en contexto.
    - Sé conciso y preciso.
+   - Si la oferta o el CV están vacíos, devuelve score=0, discarded=true y listas vacías.
    - Mantén el formato JSON exacto al final.
 """
 
